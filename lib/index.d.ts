@@ -1,6 +1,3 @@
-/**
- * @providesModule MusicControl
- */
 import { Command } from './types';
 declare const MusicControl: {
     STATE_PLAYING: any;

@@ -1,36 +1,36 @@
 name: Publish
 
 on:
-  push:
-    tags:
-      - release-*
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version major | minor | patch'
+        required: true
+        default: 'minor'
 jobs:
   publish-npm:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
       - uses: actions/setup-node@v1
-        with:
-          node-version: 12
-          registry-url: https://registry.npmjs.org/
       - run: yarn install --frozen-lockfile
-      - run: yarn semantic-release:ci
-        env:
-          NODE_AUTH_TOKEN: ${{secrets.npm_token}}
-          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
-          NPM_TOKEN: ${{secrets.NPM_TOKEN}}
-          NPM_AUTH_TOKEN: ${{secrets.NPM_AUTH_TOKEN}}
+      - name: npm version
+        run: |
+          npm version ${{ github.event.inputs.version }} --git-tag-version=false
+      - uses: EndBug/add-and-commit@v5
+        with:
+          # The arguments for the `git add` command (see the paragraph below for more info)
+          # Default: '.'
+          add: '.'
 
-  publish-gpr:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v1
-      - uses: actions/setup-node@v1
-        with:
-          node-version: 12
-          registry-url: https://npm.pkg.github.com/
-          scope: '@tanguyantoine'
-      - run: yarn install --frozen-lockfile
-      - run: npm publish
+          # The name of the user that will be displayed as the author of the commit
+          # Default: author of the commit that triggered the run
+          author_name: Release Bot
+          message: 'Bump version: by ${{github.actor}}'
         env:
-          NODE_AUTH_TOKEN: ${{secrets.NPM_AUTH_TOKEN}}
+          # This is necessary in order to push a commit to the repo
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Leave this line unchanged
+
+      - uses: JS-DevTools/npm-publish@v1
+        with:
+          token: ${{ secrets.NPM_TOKEN }}
